@@ -20,12 +20,6 @@ const todayEvents = [
   { time: "18:00", title: "Palestra" },
 ];
 
-const blockers = [
-  { who: "Studio Rossi", days: 7 },
-  { who: "Comune di Sesto", days: 4 },
-  { who: "Marco Bianchi", days: 2 },
-];
-
 const TEMP_DOT = { caldo: "hot", tiepido: "warm", freddo: "cold" };
 
 function useClock() {
@@ -206,6 +200,7 @@ export default function Home() {
   const [nuovoObiettivo, setNuovoObiettivo] = useState({ settimana: "", mese: "" });
 
   const [corpo, setCorpo] = useState(null);
+  const [bloccati, setBloccati] = useState(null);
 
   useEffect(() => {
     fetch("/api/profile")
@@ -226,6 +221,9 @@ export default function Home() {
     fetch("/api/body")
       .then((r) => r.json())
       .then(setCorpo);
+    fetch("/api/blockers")
+      .then((r) => r.json())
+      .then((d) => setBloccati(d.bloccati || []));
 
     // Cache locale per il rendering immediato, poi fusa con la lettura dal
     // server — se nel frattempo l'utente ha già cliccato, la risposta
@@ -465,10 +463,12 @@ export default function Home() {
 
         <div className="card col-3" id="card-blockers">
           <h3>Bloccato</h3>
-          {blockers.map((b) => (
-            <div className="blocker-row" key={b.who}>
-              <span className="who">{b.who}</span>
-              <span className="days">{b.days}gg</span>
+          {bloccati === null && <p className="meta">Caricamento…</p>}
+          {bloccati?.length === 0 && <p className="meta">Niente in ritardo.</p>}
+          {bloccati?.map((b, i) => (
+            <div className="blocker-row" key={i}>
+              <span className="who">{b.persona}</span>
+              <span className="days">{b.giorni}gg</span>
             </div>
           ))}
         </div>
