@@ -99,7 +99,7 @@ create table if not exists memoria (
   user_id text not null,
   testo text not null,
   provenienza text, -- da dove arriva: cattura, task completato, riga di diario, ecc.
-  embedding vector(1536), -- dimensione di text-embedding-3-small
+  embedding vector(1536), -- gemini-embedding-001 con outputDimensionality: 1536
   created_at timestamptz not null default now()
 );
 create index if not exists memoria_user_id_idx on memoria (user_id);
