@@ -6,6 +6,7 @@ import { timingSafeEqualStr } from "../../../../lib/auth";
 import { today } from "../../../../lib/date";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 // Chiamato da vercel.json con schedule "0 5 * * *" — l'orario è SEMPRE UTC:
 // sono le 6 del mattino in Italia d'inverno, le 7 d'estate. Quando cambia

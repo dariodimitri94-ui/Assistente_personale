@@ -4,6 +4,7 @@ import { embed } from "../../../lib/embeddings";
 import { cercaMemoriaPerSomiglianza, getProfilo } from "../../../lib/store";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const SYSTEM_PROMPT = `Rispondi a domande su un sistema di note personali. Ricevi il profilo dell'utente e un elenco di voci di memoria (le più vicine alla domanda per significato), ognuna con la sua provenienza.
 

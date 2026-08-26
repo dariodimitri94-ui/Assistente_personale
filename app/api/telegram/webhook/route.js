@@ -6,6 +6,7 @@ import { transcribeAudio } from "../../../../lib/transcribe";
 import { timingSafeEqualStr } from "../../../../lib/auth";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const DESTINAZIONE_LABEL = {
   task: "Task",

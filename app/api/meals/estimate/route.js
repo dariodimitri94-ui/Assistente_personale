@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 const SCHEMA = {
   type: Type.OBJECT,

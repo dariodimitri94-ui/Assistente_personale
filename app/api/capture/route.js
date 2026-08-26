@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { processCapture } from "../../../lib/capture";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 // Accetta il testo da tre posti diversi, perché i client che chiamano
 // questa rotta non sono tutti uguali: JSON (dashboard, script), un modulo
