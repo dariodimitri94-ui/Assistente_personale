@@ -31,7 +31,7 @@ function correzioneUrgenzaKeyboard(taskId) {
 }
 
 async function gestisciTesto(chatId, testo) {
-  const risultato = await processCapture(testo);
+  const risultato = await processCapture(testo, "telegram");
   const destLabel = DESTINAZIONE_LABEL[risultato.destinazione] || risultato.destinazione;
   const conferma = `Archiviato in ${destLabel}${risultato.urgenza ? ` (${URGENZA_LABEL[risultato.urgenza] || risultato.urgenza})` : ""}`;
 
