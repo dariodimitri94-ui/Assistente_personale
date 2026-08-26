@@ -57,13 +57,15 @@ export default function Finance() {
     <section className="screen active" id="screen-finance">
       <div className="card" style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <input ref={inputRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={onFileSelezionato} />
-        <button
-          onClick={() => inputRef.current?.click()}
-          disabled={caricando}
-          style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)" }}
-        >
-          {caricando ? "Carico…" : "Carica foglio"}
-        </button>
+        {!dati?.file?.drive && (
+          <button
+            onClick={() => inputRef.current?.click()}
+            disabled={caricando}
+            style={{ padding: "8px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)" }}
+          >
+            {caricando ? "Carico…" : "Carica foglio"}
+          </button>
+        )}
         <button
           onClick={aggiorna}
           disabled={aggiornando || !dati?.file}
@@ -72,7 +74,7 @@ export default function Finance() {
           {aggiornando ? "Estraggo…" : "Aggiorna"}
         </button>
         <span className="meta">
-          {dati?.file ? `File: ${dati.file.filename}` : "Nessun file caricato"}
+          {dati?.file?.drive ? "Collegato a Google Drive" : dati?.file ? `File: ${dati.file.filename}` : "Nessun file caricato"}
           {ultima ? ` · aggiornato ${new Date(ultima.estratto_il).toLocaleString("it-IT")}` : ""}
         </span>
         {errore && <span style={{ color: "var(--red)", fontSize: 12.5 }}>{errore}</span>}
