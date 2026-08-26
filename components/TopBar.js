@@ -27,6 +27,9 @@ export default function TopBar({ active, onSelect }) {
             {s.label}
           </button>
         ))}
+        <a href="/api/admin/export" style={{ fontSize: 12.5, color: "var(--text-faint)", padding: "8px 10px" }}>
+          Backup
+        </a>
       </nav>
     </header>
   );

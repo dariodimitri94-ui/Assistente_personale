@@ -42,6 +42,13 @@ async function gestisciTesto(chatId, testo) {
 async function gestisciMessaggio(message) {
   const chatId = message.chat.id;
 
+  // I comandi di Telegram (/start, /help, ecc.) non sono catture: il bot
+  // non ha comandi propri, ma non deve archiviarli come se lo fossero.
+  if (message.text?.startsWith("/")) {
+    await sendMessage(chatId, "Scrivimi o mandami una nota vocale: archivio tutto da solo.");
+    return;
+  }
+
   if (message.voice) {
     const base64 = await downloadTelegramFile(message.voice.file_id);
     const testo = await transcribeAudio(base64, "audio/ogg");
