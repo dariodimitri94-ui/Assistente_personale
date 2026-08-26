@@ -37,6 +37,7 @@ export async function POST(request) {
         responseMimeType: "application/json",
         responseSchema: SCHEMA,
         thinkingConfig: { thinkingBudget: 0 },
+        abortSignal: AbortSignal.timeout(8000),
       },
     });
     const macro = JSON.parse(response.text);

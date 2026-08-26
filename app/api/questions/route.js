@@ -38,7 +38,7 @@ export async function POST(request) {
     const response = await ai.models.generateContent({
       model,
       contents: `Domanda: ${domanda}\n\nDati disponibili:\n${JSON.stringify(contesto, null, 2)}`,
-      config: { systemInstruction: SYSTEM_PROMPT },
+      config: { systemInstruction: SYSTEM_PROMPT, abortSignal: AbortSignal.timeout(20000) },
     });
     return NextResponse.json({ risposta: response.text, fonti: voci.length });
   } catch {

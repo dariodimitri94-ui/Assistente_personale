@@ -59,6 +59,7 @@ async function handle(request) {
         config: {
           systemInstruction:
             "Scrivi un briefing mattutino in italiano, massimo 10 righe, senza convenevoli. Ricevi task di oggi, task slittati da ieri, obiettivi della settimana ancora aperti. Se una lista è vuota, dillo in una parola invece di ometterla.",
+          abortSignal: AbortSignal.timeout(15000),
         },
       });
       if (response.text?.trim()) messaggio = response.text.trim();
