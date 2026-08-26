@@ -4,7 +4,7 @@ import { getFinanceFile, saveFinanzeGiorno } from "../../../../lib/store";
 import { today } from "../../../../lib/date";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // L'estrazione parte SOLO da qui — un pulsante che l'utente preme — mai
 // dal caricamento di una pagina (Parte 5.8, la regola ferrea). È la
