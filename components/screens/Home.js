@@ -4,21 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import { isHabitDone, completionPercent } from "../../lib/habits";
 import { calorieDaMacro } from "../../lib/nutrition";
 
-const week = [
-  { dow: "Lun", day: 24 },
-  { dow: "Mar", day: 25, today: true },
-  { dow: "Mer", day: 26 },
-  { dow: "Gio", day: 27 },
-  { dow: "Ven", day: 28 },
-  { dow: "Sab", day: 29 },
-  { dow: "Dom", day: 30 },
-];
+const DOW_LABELS = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 
-const todayEvents = [
-  { time: "09:00", title: "Sopralluogo APE — Via Torino 12" },
-  { time: "14:30", title: "Call commercialista" },
-  { time: "18:00", title: "Palestra" },
-];
+function settimanaCorrente() {
+  const oggi = new Date();
+  const giornoSettimana = oggi.getDay(); // 0=domenica
+  const lunedi = new Date(oggi);
+  lunedi.setDate(oggi.getDate() - ((giornoSettimana + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(lunedi);
+    d.setDate(lunedi.getDate() + i);
+    return d;
+  });
+}
+
+function chiaveGiorno(d) {
+  // Componenti locali, non toISOString(): quella forza UTC e a ridosso
+  // della mezzanotte sbaglierebbe giorno — la stessa trappola della Parte 5.3.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const g = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${g}`;
+}
 
 const TEMP_DOT = { caldo: "hot", tiepido: "warm", freddo: "cold" };
 
@@ -202,6 +209,10 @@ export default function Home() {
   const [corpo, setCorpo] = useState(null);
   const [bloccati, setBloccati] = useState(null);
 
+  const [eventiCalendario, setEventiCalendario] = useState(null);
+  const [settimana] = useState(settimanaCorrente);
+  const [giornoSelezionato, setGiornoSelezionato] = useState(() => chiaveGiorno(new Date()));
+
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
@@ -224,6 +235,9 @@ export default function Home() {
     fetch("/api/blockers")
       .then((r) => r.json())
       .then((d) => setBloccati(d.bloccati || []));
+    fetch("/api/calendar")
+      .then((r) => r.json())
+      .then((d) => setEventiCalendario(d.eventi || []));
 
     // Cache locale per il rendering immediato, poi fusa con la lettura dal
     // server — se nel frattempo l'utente ha già cliccato, la risposta
@@ -396,19 +410,38 @@ export default function Home() {
         <div className="card col-6" id="card-calendar">
           <h3>Calendario della settimana</h3>
           <div className="week-strip">
-            {week.map((d) => (
-              <div className={`day-pill ${d.today ? "today" : ""}`} key={d.day}>
-                <span className="dow">{d.dow}</span>
-                {d.day}
-              </div>
-            ))}
+            {settimana.map((d) => {
+              const chiave = chiaveGiorno(d);
+              const oggiChiave = chiaveGiorno(new Date());
+              return (
+                <div
+                  className={`day-pill ${chiave === oggiChiave ? "today" : ""}`}
+                  key={chiave}
+                  onClick={() => setGiornoSelezionato(chiave)}
+                  style={{ cursor: "pointer", outline: chiave === giornoSelezionato ? "1.5px solid var(--accent)" : "none" }}
+                >
+                  <span className="dow">{DOW_LABELS[d.getDay()]}</span>
+                  {d.getDate()}
+                </div>
+              );
+            })}
           </div>
-          {todayEvents.map((e) => (
-            <div className="event-row" key={e.time}>
-              <span className="time">{e.time}</span>
-              <span>{e.title}</span>
-            </div>
-          ))}
+          {eventiCalendario === null && <p className="meta">Caricamento…</p>}
+          {eventiCalendario !== null &&
+            (() => {
+              const delGiorno = eventiCalendario
+                .filter((e) => chiaveGiorno(new Date(e.inizio)) === giornoSelezionato)
+                .sort((a, b) => new Date(a.inizio) - new Date(b.inizio));
+              if (delGiorno.length === 0) return <p className="meta">Nessun impegno.</p>;
+              return delGiorno.map((e, i) => (
+                <div className="event-row" key={i}>
+                  <span className="time">
+                    {new Date(e.inizio).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  <span>{e.titolo} <span className="meta">· {e.fonte}</span></span>
+                </div>
+              ));
+            })()}
         </div>
 
         <div className="card col-3" id="card-habits">
