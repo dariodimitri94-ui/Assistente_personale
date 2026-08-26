@@ -52,7 +52,7 @@ async function handle(request) {
   if (apiKey) {
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const model = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+      const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
       const response = await ai.models.generateContent({
         model,
         contents: JSON.stringify(dati),

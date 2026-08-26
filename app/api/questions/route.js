@@ -34,7 +34,7 @@ export async function POST(request) {
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const model = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+    const model = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
     const response = await ai.models.generateContent({
       model,
       contents: `Domanda: ${domanda}\n\nDati disponibili:\n${JSON.stringify(contesto, null, 2)}`,
