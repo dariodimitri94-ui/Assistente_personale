@@ -208,6 +208,7 @@ export default function Home() {
 
   const [corpo, setCorpo] = useState(null);
   const [bloccati, setBloccati] = useState(null);
+  const [finanze, setFinanze] = useState(null);
 
   const [eventiCalendario, setEventiCalendario] = useState(null);
   const [settimana] = useState(settimanaCorrente);
@@ -237,6 +238,9 @@ export default function Home() {
     fetch("/api/calendar")
       .then((r) => r.json())
       .then((d) => setEventiCalendario(d.eventi || []));
+    fetch("/api/finance")
+      .then((r) => r.json())
+      .then(setFinanze);
 
     // Cache locale per il rendering immediato, poi fusa con la lettura dal
     // server — se nel frattempo l'utente ha già cliccato, la risposta
@@ -513,13 +517,34 @@ export default function Home() {
 
         <div className="card col-6" id="card-finance-pulse">
           <h3>Polso finanziario</h3>
-          <div className="amount num">€ 42.380</div>
-          <div className="delta up num">▲ +€ 610 ultimi 30 giorni</div>
-          <div className="mini-bars">
-            {[40, 55, 48, 70, 60, 80, 75, 90].map((h, i) => (
-              <div className="bar" style={{ height: `${h}%` }} key={i}></div>
-            ))}
-          </div>
+          {!finanze?.ultima && <p className="meta">Nessun dato ancora — carica il foglio nella scheda Finanze.</p>}
+          {finanze?.ultima && (
+            <>
+              <div
+                className="amount num"
+                style={{ color: finanze.ultima.saldo >= 0 ? "var(--green)" : "var(--red)" }}
+              >
+                {finanze.ultima.saldo >= 0 ? "+" : ""}
+                {finanze.ultima.saldo.toFixed(2)} €
+              </div>
+              <div className="delta num" style={{ color: "var(--text-dim)" }}>
+                Saldo · {finanze.ultima.mese_riferimento}
+              </div>
+              {finanze.storico.length > 1 && (
+                <div className="mini-bars">
+                  {(() => {
+                    const saldi = finanze.storico.map((s) => s.saldo);
+                    const min = Math.min(...saldi, 0);
+                    const max = Math.max(...saldi, 1);
+                    const range = max - min || 1;
+                    return finanze.storico.map((s, i) => (
+                      <div className="bar" style={{ height: `${((s.saldo - min) / range) * 100}%` }} key={i}></div>
+                    ));
+                  })()}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         <div className="card col-6" id="card-nutrition">
