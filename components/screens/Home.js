@@ -205,6 +205,8 @@ export default function Home() {
   const [obiettivi, setObiettivi] = useState({ settimana: [], mese: [] });
   const [nuovoObiettivo, setNuovoObiettivo] = useState({ settimana: "", mese: "" });
 
+  const [corpo, setCorpo] = useState(null);
+
   useEffect(() => {
     fetch("/api/profile")
       .then((r) => r.json())
@@ -221,6 +223,9 @@ export default function Home() {
     fetch("/api/goals")
       .then((r) => r.json())
       .then((d) => setObiettivi(d.obiettivi || { settimana: [], mese: [] }));
+    fetch("/api/body")
+      .then((r) => r.json())
+      .then(setCorpo);
 
     // Cache locale per il rendering immediato, poi fusa con la lettura dal
     // server — se nel frattempo l'utente ha già cliccato, la risposta
@@ -515,6 +520,40 @@ export default function Home() {
           {pasti.map((p) => (
             <PastoRow key={p.id} pasto={p} onSaved={(updated) => setPasti((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))} />
           ))}
+        </div>
+
+        <div className="card col-3" id="card-body-trend">
+          <h3>Andamento fisico — 30gg</h3>
+          {!corpo && <p className="meta">Nessun dato ancora — collega Apple Salute.</p>}
+          {corpo && (
+            <>
+              {corpo.trendPeso.length > 1 ? (
+                <svg viewBox="0 0 200 60" preserveAspectRatio="none">
+                  {(() => {
+                    const pesi = corpo.trendPeso.map((p) => p.peso);
+                    const min = Math.min(...pesi);
+                    const max = Math.max(...pesi);
+                    const range = max - min || 1;
+                    const punti = corpo.trendPeso
+                      .map((p, i) => {
+                        const x = (i / (corpo.trendPeso.length - 1)) * 200;
+                        const y = 55 - ((p.peso - min) / range) * 50;
+                        return `${x},${y}`;
+                      })
+                      .join(" ");
+                    return <polyline points={punti} fill="none" stroke="var(--accent)" strokeWidth="2" />;
+                  })()}
+                </svg>
+              ) : (
+                <p className="meta">Serve più di un giorno di dati per il grafico.</p>
+              )}
+              <div className="meta" style={{ marginTop: 8 }}>
+                {corpo.oggi.peso ? `${corpo.oggi.peso} kg` : "peso: —"}
+                {corpo.oggi.passi ? ` · ${corpo.oggi.passi} passi` : ""}
+                {corpo.oggi.calorie_attive ? ` · ${corpo.oggi.calorie_attive} kcal attive` : ""}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="card col-3" id="card-goals">
