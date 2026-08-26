@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { isHabitDone, completionPercent } from "../../lib/habits";
+import { calorieDaMacro } from "../../lib/nutrition";
 
 const week = [
   { dow: "Lun", day: 24 },
@@ -18,25 +20,11 @@ const todayEvents = [
   { time: "18:00", title: "Palestra" },
 ];
 
-const habitsDemo = [
-  { label: "Allenamento", type: "check", done: true },
-  { label: "Lettura", type: "check", done: true },
-  { label: "Acqua", type: "counter", value: 4, target: 8 },
-];
-
 const blockers = [
   { who: "Studio Rossi", days: 7 },
   { who: "Comune di Sesto", days: 4 },
   { who: "Marco Bianchi", days: 2 },
 ];
-
-const goals = {
-  week: [
-    { label: "Chiudere 3 pratiche APE", done: true },
-    { label: "Preventivo cappotto", done: false },
-  ],
-  month: [{ label: "Fatturato +10%", done: false }],
-};
 
 const TEMP_DOT = { caldo: "hot", tiepido: "warm", freddo: "cold" };
 
@@ -58,11 +46,164 @@ function saluto(ore) {
   return "Buonasera";
 }
 
+function sommaPasti(pasti) {
+  return pasti.reduce(
+    (acc, p) => ({
+      calorie: acc.calorie + (p.calorie || 0),
+      proteine: acc.proteine + (p.proteine || 0),
+      carboidrati: acc.carboidrati + (p.carboidrati || 0),
+      grassi: acc.grassi + (p.grassi || 0),
+    }),
+    { calorie: 0, proteine: 0, carboidrati: 0, grassi: 0 }
+  );
+}
+
+function PastoRow({ pasto, onSaved }) {
+  const [aperto, setAperto] = useState(false);
+  const [form, setForm] = useState(pasto);
+
+  useEffect(() => setForm(pasto), [pasto]);
+
+  async function patch(body) {
+    const res = await fetch(`/api/meals/${pasto.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    onSaved(data.pasto);
+  }
+
+  function onMacroChange(campo, valore) {
+    const numero = Number(valore) || 0;
+    const nuovoForm = { ...form, [campo]: numero };
+    nuovoForm.calorie = calorieDaMacro(nuovoForm);
+    nuovoForm.stimato = false;
+    setForm(nuovoForm);
+  }
+
+  function onMacroBlur() {
+    patch({ proteine: form.proteine, carboidrati: form.carboidrati, grassi: form.grassi, calorie: form.calorie, stimato: false });
+  }
+
+  async function onCalorieBlur(valore) {
+    const calorie = Number(valore) || 0;
+    setForm((f) => ({ ...f, calorie }));
+    try {
+      const res = await fetch("/api/meals/redistribute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: pasto.nome, calorie }),
+      });
+      const macro = await res.json();
+      if (res.ok) {
+        setForm((f) => ({ ...f, ...macro, calorie }));
+        patch({ ...macro, calorie });
+      } else {
+        patch({ calorie });
+      }
+    } catch {
+      patch({ calorie });
+    }
+  }
+
+  return (
+    <div style={{ borderBottom: "1px solid var(--border)", padding: "8px 0" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", cursor: "pointer" }} onClick={() => setAperto(!aperto)}>
+        <span style={{ fontSize: 13 }}>
+          {pasto.orario} · {pasto.nome} {pasto.stimato && <span className="type-tag">stima</span>}
+        </span>
+        <span className="num" style={{ fontSize: 13 }}>{Math.round(form.calorie)} kcal</span>
+      </div>
+      {aperto && (
+        <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+          <div style={{ flex: 1 }}>
+            <div className="field-label">Kcal</div>
+            <input type="text" defaultValue={form.calorie} onBlur={(e) => onCalorieBlur(e.target.value)} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="field-label">Prot.</div>
+            <input type="text" value={form.proteine} onChange={(e) => onMacroChange("proteine", e.target.value)} onBlur={onMacroBlur} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="field-label">Carb.</div>
+            <input type="text" value={form.carboidrati} onChange={(e) => onMacroChange("carboidrati", e.target.value)} onBlur={onMacroBlur} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div className="field-label">Grassi</div>
+            <input type="text" value={form.grassi} onChange={(e) => onMacroChange("grassi", e.target.value)} onBlur={onMacroBlur} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SalutePanel({ onClose }) {
+  const [dati, setDati] = useState(null);
+  const [espansa, setEspansa] = useState(null);
+
+  useEffect(() => {
+    fetch("/api/health").then((r) => r.json()).then(setDati);
+  }, []);
+
+  return (
+    <div className="panel-overlay" onClick={onClose}>
+      <div className="panel" style={{ width: "min(560px, 100%)" }} onClick={(e) => e.stopPropagation()}>
+        <div className="panel-header">
+          <h3 style={{ margin: 0 }}>Salute — ultimi 30 giorni</h3>
+          <button className="panel-close" onClick={onClose}>×</button>
+        </div>
+        {!dati && <p className="meta">Caricamento…</p>}
+        {dati && (
+          <>
+            <p className="meta">
+              Medie su {dati.giorniRegistrati} giorni registrati: {dati.medie.calorie} kcal · P {dati.medie.proteine}g · C {dati.medie.carboidrati}g · G {dati.medie.grassi}g
+            </p>
+            {dati.giorni.map((g) => (
+              <div key={g.data} style={{ borderBottom: "1px solid var(--border)", padding: "8px 0" }}>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between", cursor: "pointer" }}
+                  onClick={() => setEspansa(espansa === g.data ? null : g.data)}
+                >
+                  <span style={{ fontSize: 13 }}>{g.data} · {g.numeroPasti} pasti</span>
+                  <span className="num" style={{ fontSize: 13 }}>{g.calorie} kcal</span>
+                </div>
+                {espansa === g.data && (
+                  <div style={{ marginTop: 6 }}>
+                    {g.pasti.map((p) => (
+                      <div key={p.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--text-dim)", padding: "3px 0" }}>
+                        <span>{p.orario} · {p.nome}</span>
+                        <span className="num">{Math.round(p.calorie)} kcal</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [profilo, setProfilo] = useState(null);
   const [striscia, setStriscia] = useState(0);
   const [sessionTasks, setSessionTasks] = useState(null);
+  const [oggi, setOggi] = useState(null);
+  const [abitudiniLog, setAbitudiniLog] = useState({});
+  const dirtyRef = useRef(false);
   const now = useClock();
+
+  const [pasti, setPasti] = useState([]);
+  const [descrizionePasto, setDescrizionePasto] = useState("");
+  const [stimando, setStimando] = useState(false);
+  const [mostraSalute, setMostraSalute] = useState(false);
+
+  const [obiettivi, setObiettivi] = useState({ settimana: [], mese: [] });
+  const [nuovoObiettivo, setNuovoObiettivo] = useState({ settimana: "", mese: "" });
 
   useEffect(() => {
     fetch("/api/profile")
@@ -74,14 +215,134 @@ export default function Home() {
     fetch("/api/session-tasks")
       .then((r) => r.json())
       .then((d) => setSessionTasks(d.tasks || []));
+    fetch("/api/meals")
+      .then((r) => r.json())
+      .then((d) => setPasti(d.pasti || []));
+    fetch("/api/goals")
+      .then((r) => r.json())
+      .then((d) => setObiettivi(d.obiettivi || { settimana: [], mese: [] }));
+
+    // Cache locale per il rendering immediato, poi fusa con la lettura dal
+    // server — se nel frattempo l'utente ha già cliccato, la risposta
+    // vecchia del server viene ignorata (Parte 5.3-bis).
+    const cacheKey = "personalos:habits";
+    try {
+      const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+      if (cached) {
+        setOggi(cached.oggi);
+        setAbitudiniLog(cached.abitudini || {});
+      }
+    } catch {}
+
+    fetch("/api/habits")
+      .then((r) => r.json())
+      .then((d) => {
+        if (dirtyRef.current) return;
+        setOggi(d.oggi);
+        setAbitudiniLog(d.abitudini || {});
+        localStorage.setItem(cacheKey, JSON.stringify({ oggi: d.oggi, abitudini: d.abitudini }));
+      });
   }, []);
+
+  function clickAbitudine(habit) {
+    dirtyRef.current = true;
+    const current = abitudiniLog[habit.id];
+    let nuovoValore;
+    if (habit.tipo === "contatore") {
+      const target = habit.obiettivo || 1;
+      const attuale = typeof current === "number" ? current : 0;
+      nuovoValore = attuale >= target ? 0 : attuale + 1;
+    } else {
+      nuovoValore = current !== true;
+    }
+
+    const nuovoLog = { ...abitudiniLog, [habit.id]: nuovoValore };
+    setAbitudiniLog(nuovoLog);
+    localStorage.setItem("personalos:habits", JSON.stringify({ oggi, abitudini: nuovoLog }));
+
+    fetch("/api/habits", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ habitId: habit.id, value: nuovoValore }),
+    }).catch(() => {
+      // scrittura fallita: rilegge lo stato vero dal server
+      fetch("/api/habits")
+        .then((r) => r.json())
+        .then((d) => setAbitudiniLog(d.abitudini || {}));
+    });
+  }
 
   function apriTask(id) {
     window.location.hash = `#crm/${id}`;
     window.dispatchEvent(new CustomEvent("personalos:apri-schermata", { detail: "crm" }));
   }
 
+  async function aggiungiPasto() {
+    const descrizione = descrizionePasto.trim();
+    if (!descrizione) return;
+    setStimando(true);
+    try {
+      const res = await fetch("/api/meals/estimate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ descrizione }),
+      });
+      const stima = await res.json();
+      const body = res.ok
+        ? { nome: descrizione, ...stima }
+        : { nome: descrizione, calorie: 0, proteine: 0, carboidrati: 0, grassi: 0, stimato: false };
+      const res2 = await fetch("/api/meals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res2.json();
+      setPasti((prev) => [...prev, data.pasto]);
+      setDescrizionePasto("");
+    } finally {
+      setStimando(false);
+    }
+  }
+
+  async function aggiungiObiettivo(sezione) {
+    const label = nuovoObiettivo[sezione].trim();
+    if (!label) return;
+    const res = await fetch("/api/goals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sezione, label }),
+    });
+    const data = await res.json();
+    setObiettivi((prev) => ({ ...prev, [sezione]: [...prev[sezione], data.voce] }));
+    setNuovoObiettivo((prev) => ({ ...prev, [sezione]: "" }));
+  }
+
+  async function toggleObiettivo(sezione, voce) {
+    const nuovoFatto = !voce.fatto;
+    setObiettivi((prev) => ({
+      ...prev,
+      [sezione]: prev[sezione].map((v) => (v.id === voce.id ? { ...v, fatto: nuovoFatto } : v)),
+    }));
+    await fetch("/api/goals", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sezione, id: voce.id, fatto: nuovoFatto }),
+    });
+  }
+
+  async function rimuoviObiettivo(sezione, id) {
+    setObiettivi((prev) => ({ ...prev, [sezione]: prev[sezione].filter((v) => v.id !== id) }));
+    await fetch("/api/goals", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sezione, id }),
+    });
+  }
+
   const iniziali = profilo?.nome ? profilo.nome.slice(0, 2).toUpperCase() : "--";
+  const totaliOggi = sommaPasti(pasti);
+  const obiettivoCalorico = profilo?.obiettivo_calorico || 2200;
+  const percMacro = (grammi, kcalPerG) => Math.min(100, Math.round(((grammi * kcalPerG) / obiettivoCalorico) * 100));
 
   return (
     <section className="screen active" id="screen-home">
@@ -149,40 +410,52 @@ export default function Home() {
 
         <div className="card col-3" id="card-habits">
           <h3>Abitudini</h3>
-          <div className="ring-wrap">
-            <svg className="ring" viewBox="0 0 36 36">
-              <path
-                d="M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32"
-                fill="none"
-                stroke="var(--surface-2)"
-                strokeWidth="3"
-              />
-              <path
-                d="M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32"
-                fill="none"
-                stroke="var(--green)"
-                strokeWidth="3"
-                strokeDasharray="75 100"
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="num" style={{ fontSize: 18, fontWeight: 700 }}>
-              75%
-            </div>
-          </div>
-          {habitsDemo.map((h) => (
-            <div className="habit-row" key={h.label}>
-              <span className={`habit-check ${h.type === "check" && h.done ? "done" : ""}`}>
-                {h.type === "check" ? (h.done ? "✓" : "") : `${h.value}/${h.target}`}
-              </span>
-              <span className="label">{h.label}</span>
-              {h.type === "counter" && (
-                <span className="count">
-                  {h.value}/{h.target}
-                </span>
-              )}
-            </div>
-          ))}
+          {(() => {
+            const lista = profilo?.abitudini || [];
+            const percent = completionPercent(lista, abitudiniLog);
+            return (
+              <>
+                <div className="ring-wrap">
+                  <svg className="ring" viewBox="0 0 36 36">
+                    <path
+                      d="M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32"
+                      fill="none"
+                      stroke="var(--surface-2)"
+                      strokeWidth="3"
+                    />
+                    <path
+                      d="M18 2a16 16 0 1 1 0 32 16 16 0 1 1 0-32"
+                      fill="none"
+                      stroke="var(--green)"
+                      strokeWidth="3"
+                      strokeDasharray={`${percent} 100`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="num" style={{ fontSize: 18, fontWeight: 700 }}>
+                    {percent}%
+                  </div>
+                </div>
+                {lista.map((h) => {
+                  const value = abitudiniLog[h.id];
+                  const done = isHabitDone(h, value);
+                  return (
+                    <div className="habit-row" key={h.id} onClick={() => clickAbitudine(h)}>
+                      <span className={`habit-check ${done ? "done" : ""}`}>
+                        {h.tipo === "contatore" ? `${value || 0}/${h.obiettivo}` : done ? "✓" : ""}
+                      </span>
+                      <span className="label">{h.label}</span>
+                      {h.tipo === "contatore" && (
+                        <span className="count">
+                          {value || 0}/{h.obiettivo}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
 
         <div className="card col-3" id="card-blockers">
@@ -206,77 +479,75 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="card col-3" id="card-nutrition">
-          <h3>Nutrizione</h3>
+        <div className="card col-6" id="card-nutrition">
+          <h3>
+            Nutrizione
+            <span style={{ fontSize: 11, cursor: "pointer", color: "var(--accent)", textTransform: "none" }} onClick={() => setMostraSalute(true)}>
+              Storico 30gg →
+            </span>
+          </h3>
           <div className="num" style={{ fontSize: 20, fontWeight: 700 }}>
-            1840 / {profilo?.obiettivo_calorico || 2200} kcal
+            {Math.round(totaliOggi.calorie)} / {obiettivoCalorico} kcal
           </div>
-          <div style={{ marginTop: 10 }}>
+          <div style={{ marginTop: 10, marginBottom: 12 }}>
             <div className="macro-bar-row">
-              <div className="macro-label">
-                <span>Proteine</span>
-                <span>96g</span>
-              </div>
-              <div className="macro-track">
-                <div className="macro-fill" style={{ width: "70%" }}></div>
-              </div>
+              <div className="macro-label"><span>Proteine</span><span>{Math.round(totaliOggi.proteine)}g</span></div>
+              <div className="macro-track"><div className="macro-fill" style={{ width: `${percMacro(totaliOggi.proteine, 4)}%` }}></div></div>
             </div>
             <div className="macro-bar-row">
-              <div className="macro-label">
-                <span>Carboidrati</span>
-                <span>180g</span>
-              </div>
-              <div className="macro-track">
-                <div className="macro-fill" style={{ width: "60%" }}></div>
-              </div>
+              <div className="macro-label"><span>Carboidrati</span><span>{Math.round(totaliOggi.carboidrati)}g</span></div>
+              <div className="macro-track"><div className="macro-fill" style={{ width: `${percMacro(totaliOggi.carboidrati, 4)}%` }}></div></div>
             </div>
             <div className="macro-bar-row">
-              <div className="macro-label">
-                <span>Grassi</span>
-                <span>55g</span>
-              </div>
-              <div className="macro-track">
-                <div className="macro-fill" style={{ width: "50%" }}></div>
-              </div>
+              <div className="macro-label"><span>Grassi</span><span>{Math.round(totaliOggi.grassi)}g</span></div>
+              <div className="macro-track"><div className="macro-fill" style={{ width: `${percMacro(totaliOggi.grassi, 9)}%` }}></div></div>
             </div>
           </div>
-        </div>
-
-        <div className="card col-3" id="card-body-trend">
-          <h3>Andamento fisico — 30gg</h3>
-          <svg viewBox="0 0 200 60" preserveAspectRatio="none">
-            <polyline
-              points="0,20 25,25 50,22 75,30 100,28 125,35 150,32 175,40 200,38"
-              fill="none"
-              stroke="var(--accent)"
-              strokeWidth="2"
-            />
-          </svg>
-          <div className="meta">78,4 kg · -1,1 kg</div>
+          <input
+            type="text"
+            placeholder={stimando ? "Sto stimando…" : "Descrivi un pasto e premi Invio…"}
+            value={descrizionePasto}
+            disabled={stimando}
+            onChange={(e) => setDescrizionePasto(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && aggiungiPasto()}
+            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", background: "var(--surface-2)", color: "var(--text)", fontSize: 13, marginBottom: 8 }}
+          />
+          {pasti.map((p) => (
+            <PastoRow key={p.id} pasto={p} onSaved={(updated) => setPasti((prev) => prev.map((x) => (x.id === updated.id ? updated : x)))} />
+          ))}
         </div>
 
         <div className="card col-3" id="card-goals">
           <h3>Obiettivi</h3>
-          <div className="goal-section">
-            <div className="sec-label">Questa settimana</div>
-            {goals.week.map((g) => (
-              <div className={`goal-row ${g.done ? "done" : ""}`} key={g.label}>
-                <span>{g.done ? "✓" : "○"}</span>
-                <span>{g.label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="goal-section">
-            <div className="sec-label">Questo mese</div>
-            {goals.month.map((g) => (
-              <div className={`goal-row ${g.done ? "done" : ""}`} key={g.label}>
-                <span>{g.done ? "✓" : "○"}</span>
-                <span>{g.label}</span>
-              </div>
-            ))}
-          </div>
+          {["settimana", "mese"].map((sezione) => (
+            <div className="goal-section" key={sezione}>
+              <div className="sec-label">{sezione === "settimana" ? "Questa settimana" : "Questo mese"}</div>
+              {obiettivi[sezione]?.map((g) => (
+                <div className={`goal-row ${g.fatto ? "done" : ""}`} key={g.id} style={{ position: "relative" }}>
+                  <span onClick={() => toggleObiettivo(sezione, g)}>{g.fatto ? "✓" : "○"}</span>
+                  <span onClick={() => toggleObiettivo(sezione, g)} style={{ flex: 1 }}>{g.label}</span>
+                  <span
+                    onClick={() => rimuoviObiettivo(sezione, g.id)}
+                    style={{ opacity: 0.5, fontSize: 11, cursor: "pointer" }}
+                  >
+                    ×
+                  </span>
+                </div>
+              ))}
+              <input
+                type="text"
+                placeholder="+ aggiungi…"
+                value={nuovoObiettivo[sezione]}
+                onChange={(e) => setNuovoObiettivo((prev) => ({ ...prev, [sezione]: e.target.value }))}
+                onKeyDown={(e) => e.key === "Enter" && aggiungiObiettivo(sezione)}
+                style={{ width: "100%", marginTop: 6, padding: "6px 8px", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text)", fontSize: 12.5 }}
+              />
+            </div>
+          ))}
         </div>
       </div>
+
+      {mostraSalute && <SalutePanel onClose={() => setMostraSalute(false)} />}
     </section>
   );
 }
