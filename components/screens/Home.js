@@ -1,8 +1,6 @@
-const sessionTasks = [
-  { title: "Richiamare per preventivo cappotto termico", person: "Marco Bianchi", temp: "hot" },
-  { title: "Inviare relazione APE firmata", person: "Studio Rossi", temp: "hot" },
-  { title: "Confermare sopralluogo di venerdì", person: "Laura Verdi", temp: "warm" },
-];
+"use client";
+
+import { useEffect, useState } from "react";
 
 const week = [
   { dow: "Lun", day: 24 },
@@ -20,7 +18,7 @@ const todayEvents = [
   { time: "18:00", title: "Palestra" },
 ];
 
-const habits = [
+const habitsDemo = [
   { label: "Allenamento", type: "check", done: true },
   { label: "Lettura", type: "check", done: true },
   { label: "Acqua", type: "counter", value: 4, target: 8 },
@@ -40,40 +38,92 @@ const goals = {
   month: [{ label: "Fatturato +10%", done: false }],
 };
 
+const TEMP_DOT = { caldo: "hot", tiepido: "warm", freddo: "cold" };
+
+function useClock() {
+  const [now, setNow] = useState(null);
+  useEffect(() => {
+    setNow(new Date());
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+function saluto(ore) {
+  if (ore === null) return "";
+  if (ore < 6) return "Ancora sveglio";
+  if (ore < 12) return "Buongiorno";
+  if (ore < 18) return "Buon pomeriggio";
+  return "Buonasera";
+}
+
 export default function Home() {
+  const [profilo, setProfilo] = useState(null);
+  const [striscia, setStriscia] = useState(0);
+  const [sessionTasks, setSessionTasks] = useState(null);
+  const now = useClock();
+
+  useEffect(() => {
+    fetch("/api/profile")
+      .then((r) => r.json())
+      .then((d) => {
+        setProfilo(d.profilo);
+        setStriscia(d.striscia || 0);
+      });
+    fetch("/api/session-tasks")
+      .then((r) => r.json())
+      .then((d) => setSessionTasks(d.tasks || []));
+  }, []);
+
+  function apriTask(id) {
+    window.location.hash = `#crm/${id}`;
+    window.dispatchEvent(new CustomEvent("personalos:apri-schermata", { detail: "crm" }));
+  }
+
+  const iniziali = profilo?.nome ? profilo.nome.slice(0, 2).toUpperCase() : "--";
+
   return (
     <section className="screen active" id="screen-home">
       <div className="grid">
         <div className="card col-4" id="card-operator">
           <h3>Operator</h3>
           <div className="row">
-            <div className="avatar">DD</div>
+            <div className="avatar">{iniziali}</div>
             <div>
-              <div className="name">Dario</div>
-              <div className="meta">Consulente energetico · Milano</div>
+              <div className="name">{profilo?.nome || "…"}</div>
+              <div className="meta">
+                {profilo ? `${profilo.ruolo || ""} · ${profilo.citta || ""}` : "Caricamento…"}
+              </div>
             </div>
           </div>
           <div className="meta" style={{ marginTop: 12 }}>
-            Focus di oggi: chiudere le pratiche APE arretrate
+            {profilo?.focus_del_giorno ? `Focus di oggi: ${profilo.focus_del_giorno}` : "Nessun focus impostato per oggi"}
           </div>
           <div className="streak">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2c1 4-3 5-3 9a3 3 0 0 0 6 0c0-1-.5-2-1-2.5.8 3 .3 5-2 6.5-3-1-4-4-4-7 0-3 2-4 4-6z" />
             </svg>
-            12 giorni di striscia
+            {striscia} {striscia === 1 ? "giorno" : "giorni"} di striscia
           </div>
         </div>
 
         <div className="card col-8" id="card-session">
           <h3>Session</h3>
-          <div className="greeting">Buongiorno, Dario</div>
-          <div className="clock">10:41 · martedì 26 agosto 2026</div>
+          <div className="greeting">{saluto(now?.getHours() ?? null)}{profilo?.nome ? `, ${profilo.nome}` : ""}</div>
+          <div className="clock">
+            {now
+              ? `${now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })} · ${now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`
+              : "--:--"}
+          </div>
           <div className="tasks">
-            {sessionTasks.map((t) => (
-              <div className="task-row" key={t.title}>
-                <span className={`dot ${t.temp}`}></span>
-                <span className="title">{t.title}</span>
-                <span className="person">{t.person}</span>
+            {sessionTasks === null && <div className="meta">Caricamento…</div>}
+            {sessionTasks?.length === 0 && <div className="meta">Niente in scadenza oggi.</div>}
+            {sessionTasks?.map((t) => (
+              <div className="task-row" key={t.id} onClick={() => apriTask(t.id)}>
+                <span className={`dot ${TEMP_DOT[t.temperatura] || "cold"}`}></span>
+                <span className="title">{t.titolo}</span>
+                <span className="person">{t.persona || ""}</span>
               </div>
             ))}
           </div>
@@ -120,7 +170,7 @@ export default function Home() {
               75%
             </div>
           </div>
-          {habits.map((h) => (
+          {habitsDemo.map((h) => (
             <div className="habit-row" key={h.label}>
               <span className={`habit-check ${h.type === "check" && h.done ? "done" : ""}`}>
                 {h.type === "check" ? (h.done ? "✓" : "") : `${h.value}/${h.target}`}
@@ -159,7 +209,7 @@ export default function Home() {
         <div className="card col-3" id="card-nutrition">
           <h3>Nutrizione</h3>
           <div className="num" style={{ fontSize: 20, fontWeight: 700 }}>
-            1840 / 2200 kcal
+            1840 / {profilo?.obiettivo_calorico || 2200} kcal
           </div>
           <div style={{ marginTop: 10 }}>
             <div className="macro-bar-row">
