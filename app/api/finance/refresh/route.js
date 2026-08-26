@@ -20,7 +20,7 @@ export async function POST() {
   const driveFileId = process.env.FINANCE_DRIVE_FILE_ID;
   if (driveFileId) {
     try {
-      contentBase64 = await scaricaDaGoogleDrive(driveFileId);
+      contentBase64 = await scaricaDaGoogleDrive(driveFileId, process.env.FINANCE_DRIVE_TIPO || "drive");
       mimeType = MIME_XLSX;
     } catch (e) {
       return NextResponse.json({ error: e.message }, { status: 502 });
