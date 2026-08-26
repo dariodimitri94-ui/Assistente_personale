@@ -297,6 +297,18 @@ table.finance-table tr:last-child td { border-bottom: none; }
 #capture-bar svg { width: 16px; height: 16px; }
 #capture-bar .status { font-size: 11.5px; color: var(--text-faint); padding-right: 6px; white-space: nowrap; }
 
+.answer-box {
+  position: fixed; bottom: 78px; left: 50%; transform: translateX(-50%);
+  width: min(560px, calc(100% - 40px)); max-height: 50vh; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 16px 18px; box-shadow: 0 8px 30px rgba(0,0,0,0.4); z-index: 20;
+  font-size: 13.5px; line-height: 1.6; white-space: pre-wrap;
+}
+.answer-box .answer-close {
+  float: right; background: transparent; border: none; color: var(--text-faint);
+  font-size: 18px; line-height: 1; cursor: pointer; margin-left: 10px;
+}
+
 @media (max-width: 900px) {
   .col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-9 { grid-column: span 12; }
   .kanban { grid-template-columns: 1fr; }

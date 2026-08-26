@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { classify } from "../../../lib/classify";
+import { embed } from "../../../lib/embeddings";
 import { addCattura, addMemoria, addTask, findOrCreatePersona } from "../../../lib/store";
 
 export const dynamic = "force-dynamic";
@@ -46,9 +47,11 @@ export async function POST(request) {
     urgenza,
   });
 
+  const embedding = await embed(testo.trim());
   await addMemoria({
     testo: testo.trim(),
     provenienza: `cattura:${cattura.id}`,
+    embedding,
   });
 
   return NextResponse.json({ destinazione, urgenza, via, id: cattura.id });
