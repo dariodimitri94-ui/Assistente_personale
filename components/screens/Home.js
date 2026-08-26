@@ -211,7 +211,6 @@ export default function Home() {
 
   const [eventiCalendario, setEventiCalendario] = useState(null);
   const [settimana] = useState(settimanaCorrente);
-  const [giornoSelezionato, setGiornoSelezionato] = useState(() => chiaveGiorno(new Date()));
 
   useEffect(() => {
     fetch("/api/profile")
@@ -409,39 +408,45 @@ export default function Home() {
 
         <div className="card col-6" id="card-calendar">
           <h3>Calendario della settimana</h3>
-          <div className="week-strip">
-            {settimana.map((d) => {
+          {eventiCalendario === null && <p className="meta">Caricamento…</p>}
+          {eventiCalendario !== null &&
+            settimana.map((d) => {
               const chiave = chiaveGiorno(d);
               const oggiChiave = chiaveGiorno(new Date());
+              const eOggi = chiave === oggiChiave;
+              const delGiorno = eventiCalendario
+                .filter((e) => chiaveGiorno(new Date(e.inizio)) === chiave)
+                .sort((a, b) => new Date(a.inizio) - new Date(b.inizio));
+
               return (
                 <div
-                  className={`day-pill ${chiave === oggiChiave ? "today" : ""}`}
                   key={chiave}
-                  onClick={() => setGiornoSelezionato(chiave)}
-                  style={{ cursor: "pointer", outline: chiave === giornoSelezionato ? "1.5px solid var(--accent)" : "none" }}
+                  className="calendar-day-block"
+                  style={{
+                    borderLeft: eOggi ? "3px solid var(--accent)" : "3px solid transparent",
+                    background: eOggi ? "var(--surface-2)" : "transparent",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    marginBottom: 4,
+                  }}
                 >
-                  <span className="dow">{DOW_LABELS[d.getDay()]}</span>
-                  {d.getDate()}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                    <span style={{ fontSize: eOggi ? 13.5 : 12.5, fontWeight: eOggi ? 700 : 500, color: eOggi ? "var(--accent)" : "var(--text-dim)" }}>
+                      {DOW_LABELS[d.getDay()]} {d.getDate()}
+                    </span>
+                    {delGiorno.length === 0 && <span className="meta" style={{ fontSize: 11.5 }}>—</span>}
+                  </div>
+                  {delGiorno.map((e, i) => (
+                    <div className="event-row" key={i} style={{ paddingLeft: 4 }}>
+                      <span className="time">
+                        {new Date(e.inizio).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <span>{e.titolo} <span className="meta">· {e.fonte}</span></span>
+                    </div>
+                  ))}
                 </div>
               );
             })}
-          </div>
-          {eventiCalendario === null && <p className="meta">Caricamento…</p>}
-          {eventiCalendario !== null &&
-            (() => {
-              const delGiorno = eventiCalendario
-                .filter((e) => chiaveGiorno(new Date(e.inizio)) === giornoSelezionato)
-                .sort((a, b) => new Date(a.inizio) - new Date(b.inizio));
-              if (delGiorno.length === 0) return <p className="meta">Nessun impegno.</p>;
-              return delGiorno.map((e, i) => (
-                <div className="event-row" key={i}>
-                  <span className="time">
-                    {new Date(e.inizio).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                  <span>{e.titolo} <span className="meta">· {e.fonte}</span></span>
-                </div>
-              ));
-            })()}
         </div>
 
         <div className="card col-3" id="card-habits">
