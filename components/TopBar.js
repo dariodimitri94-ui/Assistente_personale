@@ -3,6 +3,7 @@
 const SCREENS = [
   { id: "home", label: "Home" },
   { id: "crm", label: "CRM" },
+  { id: "clienti", label: "Clienti" },
   { id: "finance", label: "Finanze" },
   { id: "review", label: "Review" },
 ];
