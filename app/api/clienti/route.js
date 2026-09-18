@@ -1,17 +1,9 @@
 import { NextResponse } from "next/server";
-import { addPersona, getClientiPerNewsletter, getPersone } from "../../../lib/store";
+import { addPersona, getPersone } from "../../../lib/store";
 
 export const dynamic = "force-dynamic";
 
-// ?perNewsletter=1&tag=a&tag=b → solo clienti con consenso ed email,
-// filtrati per tag (usato dalla scheda Newsletter per l'anteprima).
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  if (searchParams.get("perNewsletter") === "1") {
-    const tag = searchParams.getAll("tag").filter(Boolean);
-    const clienti = await getClientiPerNewsletter(tag);
-    return NextResponse.json({ clienti });
-  }
+export async function GET() {
   const clienti = await getPersone();
   return NextResponse.json({ clienti });
 }
