@@ -100,6 +100,8 @@ export default function CaptureBar() {
       setMessage(`→ ${DESTINAZIONE_LABEL[data.destinazione] || data.destinazione}`);
       setText("");
       setStatus("fatto");
+      // La Home ricarica cervello e task: il nuovo pensiero appare subito
+      window.dispatchEvent(new CustomEvent("personalos:aggiorna"));
     } catch {
       setMessage("Errore, riprova");
       setStatus("fatto");

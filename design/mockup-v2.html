@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PersonalOS v2 — Mockup</title>
+<style>
+  :root {
+    --bg: #06070c;
+    --bg-2: #0b0d16;
+    --glass: rgba(255, 255, 255, 0.035);
+    --glass-strong: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #eef0f6;
+    --text-dim: #9aa0b4;
+    --text-faint: #5f6579;
+
+    --n-persona: #38d6ff;
+    --n-task: #ffb547;
+    --n-memoria: #a78bfa;
+    --n-evento: #4ade80;
+    --n-abitudine: #f472b6;
+    --n-finanza: #2dd4bf;
+    --n-io: #ffffff;
+
+    --green: #4ade80;
+    --red: #fb7185;
+    --orange: #ffb547;
+    --accent: #8b9dff;
+
+    --radius: 18px;
+    --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Cascadia Mono", ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(139, 157, 255, 0.10), transparent 60%),
+      radial-gradient(800px 500px at 90% 30%, rgba(167, 139, 250, 0.06), transparent 60%),
+      radial-gradient(700px 500px at 5% 60%, rgba(56, 214, 255, 0.05), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ===== top bar ===== */
+  #topbar {
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: rgba(6, 7, 12, 0.6);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: 0.01em; }
+  .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent), 0 0 24px rgba(139,157,255,0.5);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.7; } }
+  #tabs { display: flex; gap: 2px; background: var(--glass); border: 1px solid var(--border); border-radius: 999px; padding: 4px; }
+  #tabs button {
+    background: transparent; border: none; color: var(--text-dim);
+    padding: 7px 16px; border-radius: 999px; font-size: 13px; font-weight: 500;
+  }
+  #tabs button.active { background: var(--glass-strong); color: var(--text); box-shadow: inset 0 0 0 1px var(--border); }
+
+  /* ===== layout ===== */
+  #page { max-width: 1320px; margin: 0 auto; padding: 24px 28px 120px; }
+  .greeting-row { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; gap: 16px; flex-wrap: wrap; }
+  .greeting-row h1 { font-size: 28px; font-weight: 650; margin: 0; letter-spacing: -0.02em; }
+  .greeting-row .sub { color: var(--text-dim); font-size: 13.5px; margin-top: 2px; }
+  .sources { display: flex; gap: 6px; flex-wrap: wrap; }
+  .source {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px; color: var(--text-dim);
+    padding: 5px 10px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--border);
+  }
+  .source i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .source.off { color: var(--text-faint); border-style: dashed; }
+  .source.off i { background: var(--text-faint); box-shadow: none; }
+
+  .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+  .card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+  }
+  .card h3 {
+    margin: 0 0 12px; font-size: 11.5px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-faint);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .col-3 { grid-column: span 3; } .col-4 { grid-column: span 4; } .col-5 { grid-column: span 5; }
+  .col-6 { grid-column: span 6; } .col-8 { grid-column: span 8; } .col-9 { grid-column: span 9; } .col-12 { grid-column: span 12; }
+
+  /* ===== brain ===== */
+  #brain-card { padding: 0; height: 520px; display: flex; }
+  #brain-wrap { position: relative; flex: 1; }
+  #brain { width: 100%; height: 100%; display: block; cursor: grab; }
+  .brain-label {
+    position: absolute; top: 18px; left: 20px;
+    font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-faint);
+  }
+  .legend { position: absolute; bottom: 16px; left: 20px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-dim); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 8px; height: 8px; border-radius: 50%; }
+  #tooltip {
+    position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.15s;
+    background: rgba(10, 12, 20, 0.92); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 11px; font-size: 12.5px; max-width: 240px; backdrop-filter: blur(8px);
+  }
+  #tooltip .t-type { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 2px; }
+
+  #brain-side {
+    width: 330px; border-left: 1px solid var(--border);
+    padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto;
+    background: rgba(0,0,0,0.15);
+  }
+  .side-title { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.09em; color: var(--text-faint); }
+  .focus-node { font-size: 16px; font-weight: 600; }
+  .focus-meta { color: var(--text-dim); font-size: 12.5px; }
+  .conn-list { display: flex; flex-direction: column; gap: 6px; }
+  .conn {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px;
+    border-radius: 10px; background: var(--glass); border: 1px solid var(--border); font-size: 13px;
+  }
+  .conn i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .insight {
+    border-radius: 12px; padding: 12px 13px; font-size: 13px; line-height: 1.5;
+    background: linear-gradient(135deg, rgba(167,139,250,0.14), rgba(56,214,255,0.08));
+    border: 1px solid rgba(167,139,250,0.25);
+  }
+  .insight b { color: #d6ccff; font-weight: 600; }
+
+  /* ===== session ===== */
+  .task {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 7px;
+    border-radius: 12px; background: var(--glass); border: 1px solid var(--border); font-size: 13.5px;
+  }
+  .task .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .task .who { margin-left: auto; color: var(--text-faint); font-size: 12px; }
+
+  /* ===== timeline ===== */
+  .timeline { position: relative; padding-left: 18px; }
+  .timeline::before { content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 1px; background: var(--border); }
+  .tl-item { position: relative; padding: 4px 0 12px; }
+  .tl-item::before {
+    content: ""; position: absolute; left: -18px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--bg-2); border: 1.5px solid var(--text-faint);
+  }
+  .tl-item.now::before { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .tl-item.done { opacity: 0.45; }
+  .tl-time { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-faint); }
+  .tl-title { font-size: 13.5px; }
+  .tl-src { font-size: 11px; color: var(--text-faint); }
+
+  /* ===== proactive ===== */
+  .nudge {
+    display: flex; gap: 11px; padding: 11px 12px; border-radius: 12px; margin-bottom: 8px;
+    background: var(--glass); border: 1px solid var(--border);
+  }
+  .nudge .when { font-family: var(--font-mono); font-size: 11px; color: var(--accent); white-space: nowrap; padding-top: 2px; }
+  .nudge .what { font-size: 13px; }
+  .nudge .why { font-size: 11.5px; color: var(--text-faint); margin-top: 2px; }
+
+  /* ===== habits ===== */
+  .rings { display: flex; justify-content: space-around; gap: 8px; }
+  .ring-box { text-align: center; font-size: 12px; color: var(--text-dim); }
+  .ring-box svg { width: 64px; height: 64px; display: block; margin: 0 auto 6px; }
+
+  /* ===== finance ===== */
+  .big-num { font-size: 30px; font-weight: 650; letter-spacing: -0.02em; }
+  .spark { width: 100%; height: 54px; margin-top: 10px; }
+  .kv { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-dim); margin-top: 6px; }
+
+  /* ===== capture ===== */
+  #capture {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    width: min(640px, calc(100% - 40px));
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 8px 8px 18px; border-radius: 999px;
+    background: rgba(14, 16, 26, 0.75); backdrop-filter: blur(20px);
+    border: 1px solid rgba(139,157,255,0.25);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 30px rgba(139,157,255,0.12);
+    z-index: 20;
+  }
+  #capture input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-size: 14.5px; font-family: inherit; }
+  #capture input::placeholder { color: var(--text-faint); }
+  #capture .btn {
+    width: 38px; height: 38px; border-radius: 50%; border: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--glass-strong); color: var(--text-dim);
+  }
+  #capture .btn.send { background: var(--accent); color: #0b0d16; box-shadow: 0 0 16px rgba(139,157,255,0.5); }
+  #capture svg { width: 17px; height: 17px; }
+
+  @media (max-width: 1000px) {
+    .col-3, .col-4, .col-5, .col-6, .col-8, .col-9 { grid-column: span 12; }
+    #brain-card { flex-direction: column; height: auto; }
+    #brain-wrap { height: 420px; }
+    #brain-side { width: 100%; border-left: none; border-top: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand"><span class="brand-dot"></span> PersonalOS</div>
+  <nav id="tabs">
+    <button class="active">Home</button>
+    <button>CRM</button>
+    <button>Clienti</button>
+    <button>Finanze</button>
+    <button>Review</button>
+  </nav>
+</header>
+
+<main id="page">
+
+  <div class="greeting-row">
+    <div>
+      <h1 id="saluto">Buonasera, Dario</h1>
+      <div class="sub"><span id="clock" class="num">--:--</span> · giovedì 1 ottobre · 3 cose contano oggi</div>
+    </div>
+    <div class="sources">
+      <span class="source"><i></i>Calendario iCloud</span>
+      <span class="source"><i></i>Telegram</span>
+      <span class="source"><i></i>Siri</span>
+      <span class="source"><i></i>Google Sheets</span>
+      <span class="source off"><i></i>Gmail · collega</span>
+      <span class="source off"><i></i>Apple Salute · collega</span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ===== CERVELLO ===== -->
+    <section class="card col-12" id="brain-card">
+      <div id="brain-wrap">
+        <div class="brain-label">Il tuo cervello · 34 nodi · 52 connessioni</div>
+        <canvas id="brain"></canvas>
+        <div id="tooltip"><div class="t-type"></div><div class="t-label"></div></div>
+        <div class="legend">
+          <span><i style="background:var(--n-persona)"></i>Persone</span>
+          <span><i style="background:var(--n-task)"></i>Task</span>
+          <span><i style="background:var(--n-memoria)"></i>Ricordi</span>
+          <span><i style="background:var(--n-evento)"></i>Eventi</span>
+          <span><i style="background:var(--n-abitudine)"></i>Abitudini</span>
+          <span><i style="background:var(--n-finanza)"></i>Finanze</span>
+        </div>
+      </div>
+      <aside id="brain-side">
+        <div>
+          <div class="side-title">Nodo selezionato</div>
+          <div class="focus-node" id="focus-label">Marco</div>
+          <div class="focus-meta" id="focus-meta">Persona · 4 connessioni</div>
+        </div>
+        <div>
+          <div class="side-title" style="margin-bottom:8px">Connesso a</div>
+          <div class="conn-list" id="conn-list"></div>
+        </div>
+        <div class="insight">
+          <b>Collegamento suggerito</b><br>
+          Il preventivo per <b>Marco</b> è un cappotto termico, e ad agosto hai scritto che vuoi <b>specializzarti in ristrutturazioni sostenibili</b>. Potrebbe essere il cliente-pilota giusto.
+        </div>
+      </aside>
+    </section>
+
+    <!-- ===== SESSION ===== -->
+    <section class="card col-5">
+      <h3>Le 3 cose di oggi</h3>
+      <div class="task"><span class="dot" style="background:var(--red);box-shadow:0 0 8px var(--red)"></span>Richiamare Marco per il preventivo<span class="who">Marco</span></div>
+      <div class="task"><span class="dot" style="background:var(--orange)"></span>Richiamare Luca<span class="who">Luca</span></div>
+      <div class="task"><span class="dot" style="background:var(--orange)"></span>Chiudere la pratica Rossi<span class="who">Studio Rossi</span></div>
+    </section>
+
+    <!-- ===== OGGI (timeline) ===== -->
+    <section class="card col-4">
+      <h3>La tua giornata</h3>
+      <div class="timeline">
+        <div class="tl-item done"><div class="tl-time">09:00</div><div class="tl-title">Misurazione dieta</div><div class="tl-src">Personale</div></div>
+        <div class="tl-item done"><div class="tl-time">11:30</div><div class="tl-title">Sopralluogo via Libertà</div><div class="tl-src">Lavoro</div></div>
+        <div class="tl-item now"><div class="tl-time">18:36 · adesso</div><div class="tl-title">Tempo libero</div></div>
+        <div class="tl-item"><div class="tl-time">20:30</div><div class="tl-title">Cena con Remo</div><div class="tl-src">Personale</div></div>
+      </div>
+    </section>
+
+    <!-- ===== PROATTIVO ===== -->
+    <section class="card col-3">
+      <h3>Nelle prossime ore</h3>
+      <div class="nudge"><div class="when">20:00</div><div><div class="what">Prima della cena: chiedi a Remo del lavoro a Mondello</div><div class="why">dalla tua cattura del 26/08</div></div></div>
+      <div class="nudge"><div class="when">22:00</div><div><div class="what">Lettura non ancora spuntata oggi</div><div class="why">striscia a rischio</div></div></div>
+    </section>
+
+    <!-- ===== ABITUDINI ===== -->
+    <section class="card col-4">
+      <h3>Abitudini <span class="num" style="text-transform:none;letter-spacing:0">67%</span></h3>
+      <div class="rings">
+        <div class="ring-box">
+          <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--n-abitudine)" stroke-width="3" stroke-dasharray="94 94" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg>
+          Allenamento
+        </div>
+        <div class="ring-box">
+          <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--n-abitudine)" stroke-width="3" stroke-dasharray="0 94" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg>
+          Lettura
+        </div>
+        <div class="ring-box">
+          <svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/><circle cx="18" cy="18" r="15" fill="none" stroke="var(--n-abitudine)" stroke-width="3" stroke-dasharray="59 94" stroke-linecap="round" transform="rotate(-90 18 18)"/></svg>
+          Acqua 5/8
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FINANZE ===== -->
+    <section class="card col-4">
+      <h3>Polso finanziario <span style="text-transform:none;letter-spacing:0">Agosto</span></h3>
+      <div class="big-num num" style="color:var(--green)">+2.115,23 €</div>
+      <div class="kv"><span>Entrate</span><span class="num">2.475,23 €</span></div>
+      <div class="kv"><span>Uscite</span><span class="num">360,00 €</span></div>
+      <svg class="spark" viewBox="0 0 200 54" preserveAspectRatio="none">
+        <defs><linearGradient id="fg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#2dd4bf" stop-opacity="0.35"/><stop offset="1" stop-color="#2dd4bf" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0,40 L25,36 L50,38 L75,28 L100,30 L125,22 L150,24 L175,14 L200,10 L200,54 L0,54 Z" fill="url(#fg)"/>
+        <polyline points="0,40 25,36 50,38 75,28 100,30 125,22 150,24 175,14 200,10" fill="none" stroke="#2dd4bf" stroke-width="2"/>
+      </svg>
+    </section>
+
+    <!-- ===== NUTRIZIONE ===== -->
+    <section class="card col-4">
+      <h3>Nutrizione <span class="num" style="text-transform:none;letter-spacing:0">1.480 / 2.500</span></h3>
+      <div class="kv"><span>Proteine</span><span class="num">96 g</span></div>
+      <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);margin:4px 0 8px"><div style="width:62%;height:100%;border-radius:3px;background:var(--n-finanza)"></div></div>
+      <div class="kv"><span>Carboidrati</span><span class="num">150 g</span></div>
+      <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);margin:4px 0 8px"><div style="width:48%;height:100%;border-radius:3px;background:var(--n-persona)"></div></div>
+      <div class="kv"><span>Grassi</span><span class="num">48 g</span></div>
+      <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);margin:4px 0 0"><div style="width:55%;height:100%;border-radius:3px;background:var(--n-task)"></div></div>
+    </section>
+
+  </div>
+</main>
+
+<div id="capture">
+  <button class="btn" aria-label="microfono">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v4"/></svg>
+  </button>
+  <input placeholder="Pensa ad alta voce… o fai una domanda al tuo cervello">
+  <button class="btn send" aria-label="invia">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+  </button>
+</div>
+
+<script>
+// ===== Dati d'esempio (nel prodotto vero arrivano dal database) =====
+const COLORS = {
+  io: "#ffffff", persona: "#38d6ff", task: "#ffb547", memoria: "#a78bfa",
+  evento: "#4ade80", abitudine: "#f472b6", finanza: "#2dd4bf",
+};
+const TYPE_LABEL = {
+  io: "Tu", persona: "Persona", task: "Task", memoria: "Ricordo",
+  evento: "Evento", abitudine: "Abitudine", finanza: "Finanze",
+};
+
+const nodes = [
+  { id: "io", label: "Dario", type: "io", r: 13 },
+  { id: "marco", label: "Marco", type: "persona", r: 9 },
+  { id: "luca", label: "Luca", type: "persona", r: 8 },
+  { id: "remo", label: "Remo", type: "persona", r: 8 },
+  { id: "rossi", label: "Studio Rossi", type: "persona", r: 8 },
+  { id: "t1", label: "Richiamare Marco per il preventivo", type: "task", r: 7 },
+  { id: "t2", label: "Richiamare Luca", type: "task", r: 6 },
+  { id: "t3", label: "Chiudere la pratica Rossi", type: "task", r: 6 },
+  { id: "t4", label: "Preventivo cappotto termico", type: "task", r: 6 },
+  { id: "t5", label: "Aggiornare il listino", type: "task", r: 5 },
+  { id: "m1", label: "Specializzarmi in ristrutturazioni sostenibili", type: "memoria", r: 8 },
+  { id: "m2", label: "Remo: lavoro a Mondello", type: "memoria", r: 6 },
+  { id: "m3", label: "Il cappotto conviene col bonus", type: "memoria", r: 5 },
+  { id: "m4", label: "Mi sento stanco, dormire di più", type: "memoria", r: 5 },
+  { id: "m5", label: "Corso BIM a febbraio", type: "memoria", r: 5 },
+  { id: "e1", label: "Misurazione dieta", type: "evento", r: 6 },
+  { id: "e2", label: "Sopralluogo via Libertà", type: "evento", r: 6 },
+  { id: "e3", label: "Cena con Remo", type: "evento", r: 6 },
+  { id: "e4", label: "Psicologa", type: "evento", r: 5 },
+  { id: "h1", label: "Allenamento", type: "abitudine", r: 6 },
+  { id: "h2", label: "Lettura", type: "abitudine", r: 5 },
+  { id: "h3", label: "Acqua", type: "abitudine", r: 5 },
+  { id: "f1", label: "Saldo agosto +2.115 €", type: "finanza", r: 7 },
+  { id: "f2", label: "Affitto +300 €", type: "finanza", r: 5 },
+  { id: "f3", label: "Commercialista −340 €", type: "finanza", r: 5 },
+  { id: "f4", label: "Palestra −28 €", type: "finanza", r: 4 },
+];
+
+const links = [
+  ["io","marco"],["io","luca"],["io","remo"],["io","rossi"],["io","m1"],["io","h1"],["io","h2"],["io","h3"],["io","f1"],
+  ["marco","t1"],["marco","t4"],["luca","t2"],["rossi","t3"],["remo","m2"],["remo","e3"],
+  ["t4","m3"],["t4","m1"],["t1","t4"],["m1","m5"],["m1","t5"],["m3","f3"],
+  ["e2","rossi"],["e2","t3"],["e3","m2"],["e1","h1"],["e1","m4"],["m4","e4"],["m4","h1"],
+  ["h1","f4"],["f1","f2"],["f1","f3"],["f1","f4"],["h2","m4"],["t5","m1"],
+];
+
+// ===== Simulazione di forze, leggera e sempre "viva" =====
+const canvas = document.getElementById("brain");
+const ctx = canvas.getContext("2d");
+const tooltip = document.getElementById("tooltip");
+let W = 0, H = 0, dpr = window.devicePixelRatio || 1;
+let inizializzato = false;
+
+const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+const adj = Object.fromEntries(nodes.map((n) => [n.id, new Set()]));
+links.forEach(([a, b]) => { adj[a].add(b); adj[b].add(a); });
+
+function resize() {
+  const rect = canvas.getBoundingClientRect();
+  // se la tela cambia dimensione, sposta tutto il cervello col suo centro
+  if (inizializzato) {
+    const dx = (rect.width - W) / 2, dy = (rect.height - H) / 2;
+    nodes.forEach((n) => { n.x += dx; n.y += dy; });
+  }
+  W = rect.width; H = rect.height;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+resize();
+new ResizeObserver(resize).observe(canvas);
+
+function inizializza() {
+  if (inizializzato || W < 50 || H < 50) return;
+  inizializzato = true;
+  nodes.forEach((n, i) => {
+    const a = (i / nodes.length) * Math.PI * 2;
+    const raggio = Math.min(W, H) * 0.32;
+    n.x = W / 2 + Math.cos(a) * raggio + (Math.random() - 0.5) * 30;
+    n.y = H / 2 + Math.sin(a) * raggio * 0.75 + (Math.random() - 0.5) * 30;
+    n.vx = 0; n.vy = 0;
+    n.phase = Math.random() * Math.PI * 2;
+  });
+  byId.io.x = W / 2; byId.io.y = H / 2;
+  // pre-riscaldamento: il cervello appare già assestato, non "esplode" all'apertura
+  for (let i = 0; i < 400; i++) step();
+}
+
+function step() {
+  inizializza();
+  if (!inizializzato) return;
+  for (let i = 0; i < nodes.length; i++) {
+    const a = nodes[i];
+    for (let j = i + 1; j < nodes.length; j++) {
+      const b = nodes[j];
+      let dx = a.x - b.x, dy = a.y - b.y;
+      const d = Math.max(Math.sqrt(dx * dx + dy * dy), 12);
+      const f = Math.min(5200 / (d * d), 3);
+      dx /= d; dy /= d;
+      a.vx += dx * f; a.vy += dy * f;
+      b.vx -= dx * f; b.vy -= dy * f;
+    }
+  }
+  links.forEach(([ia, ib]) => {
+    const a = byId[ia], b = byId[ib];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+    const target = ia === "io" || ib === "io" ? 120 : 70;
+    const f = (d - target) * 0.006;
+    a.vx += (dx / d) * f; a.vy += (dy / d) * f;
+    b.vx -= (dx / d) * f; b.vy -= (dy / d) * f;
+  });
+  const t = performance.now() / 1000;
+  nodes.forEach((n) => {
+    n.vx += (W / 2 - n.x) * 0.0005 + Math.cos(t * 0.6 + n.phase) * 0.03;
+    n.vy += (H / 2 - n.y) * 0.0009 + Math.sin(t * 0.5 + n.phase) * 0.03;
+    if (n === dragging) return;
+    // bordi morbidi invece di un muro: i nodi rimbalzano piano verso il centro
+    const margine = 40;
+    if (n.x < margine) n.vx += (margine - n.x) * 0.05;
+    if (n.x > W - margine) n.vx -= (n.x - (W - margine)) * 0.05;
+    if (n.y < margine + 20) n.vy += (margine + 20 - n.y) * 0.05;
+    if (n.y > H - margine - 45) n.vy -= (n.y - (H - margine - 45)) * 0.05;
+    n.vx *= 0.82; n.vy *= 0.82;
+    const v = Math.hypot(n.vx, n.vy);
+    if (v > 4) { n.vx *= 4 / v; n.vy *= 4 / v; }
+    n.x += n.vx; n.y += n.vy;
+  });
+}
+
+// "Sinapsi": impulsi di luce che viaggiano lungo le connessioni
+const pulses = [];
+function spawnPulse() {
+  const pool = selected ? links.filter(([a, b]) => a === selected.id || b === selected.id) : links;
+  const [a, b] = pool[Math.floor(Math.random() * pool.length)];
+  const forward = Math.random() > 0.5;
+  pulses.push({ from: forward ? a : b, to: forward ? b : a, t: 0, speed: 0.008 + Math.random() * 0.01 });
+}
+setInterval(spawnPulse, 220);
+
+let hovered = null;
+let selected = byId.marco;
+let dragging = null;
+
+function isDim(n) {
+  if (!selected) return false;
+  return n !== selected && !adj[selected.id].has(n.id);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  if (!inizializzato) return;
+
+  links.forEach(([ia, ib]) => {
+    const a = byId[ia], b = byId[ib];
+    const active = selected && (ia === selected.id || ib === selected.id);
+    const dim = selected && !active;
+    const g = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+    g.addColorStop(0, COLORS[a.type]);
+    g.addColorStop(1, COLORS[b.type]);
+    ctx.strokeStyle = g;
+    ctx.globalAlpha = dim ? 0.06 : active ? 0.75 : 0.22;
+    ctx.lineWidth = active ? 1.6 : 1;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  for (let i = pulses.length - 1; i >= 0; i--) {
+    const p = pulses[i];
+    p.t += p.speed;
+    if (p.t >= 1) { pulses.splice(i, 1); continue; }
+    const a = byId[p.from], b = byId[p.to];
+    const x = a.x + (b.x - a.x) * p.t, y = a.y + (b.y - a.y) * p.t;
+    const color = COLORS[b.type];
+    ctx.shadowColor = color; ctx.shadowBlur = 12;
+    ctx.fillStyle = color;
+    ctx.globalAlpha = Math.sin(p.t * Math.PI) * (isDim(a) && isDim(b) ? 0.15 : 0.95);
+    ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+
+  const t = performance.now() / 1000;
+  nodes.forEach((n) => {
+    const color = COLORS[n.type];
+    const dim = isDim(n);
+    const breathe = 1 + Math.sin(t * 2 + n.phase) * 0.08;
+    const r = n.r * breathe * (n === hovered || n === selected ? 1.25 : 1);
+
+    ctx.globalAlpha = dim ? 0.18 : 1;
+    const halo = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 3.2);
+    halo.addColorStop(0, color + "55");
+    halo.addColorStop(1, color + "00");
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(n.x, n.y, r * 3.2, 0, Math.PI * 2); ctx.fill();
+
+    ctx.shadowColor = color; ctx.shadowBlur = dim ? 0 : 14;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.beginPath(); ctx.arc(n.x - r * 0.3, n.y - r * 0.3, r * 0.28, 0, Math.PI * 2); ctx.fill();
+
+    const showLabel = !dim && (n.r >= 8 || n === hovered || n === selected || (selected && adj[selected.id].has(n.id)));
+    if (showLabel) {
+      ctx.font = `${n.type === "io" ? 600 : 500} 12px Inter, Segoe UI, sans-serif`;
+      ctx.fillStyle = "rgba(238,240,246,0.9)";
+      ctx.textAlign = "center";
+      const label = n.label.length > 26 ? n.label.slice(0, 25) + "…" : n.label;
+      ctx.fillText(label, n.x, n.y + r + 15);
+    }
+  });
+  ctx.globalAlpha = 1;
+}
+
+function loop() { step(); draw(); requestAnimationFrame(loop); }
+loop();
+
+function nodeAt(x, y) {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    if ((n.x - x) ** 2 + (n.y - y) ** 2 < (n.r + 6) ** 2) return n;
+  }
+  return null;
+}
+
+function localPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+canvas.addEventListener("mousemove", (e) => {
+  const { x, y } = localPos(e);
+  if (dragging) { dragging.x = x; dragging.y = y; dragging.vx = 0; dragging.vy = 0; return; }
+  hovered = nodeAt(x, y);
+  canvas.style.cursor = hovered ? "pointer" : "grab";
+  if (hovered) {
+    tooltip.style.opacity = 1;
+    tooltip.style.left = Math.min(x + 14, W - 250) + "px";
+    tooltip.style.top = y + 14 + "px";
+    tooltip.querySelector(".t-type").textContent = TYPE_LABEL[hovered.type];
+    tooltip.querySelector(".t-type").style.color = COLORS[hovered.type];
+    tooltip.querySelector(".t-label").textContent = hovered.label;
+  } else {
+    tooltip.style.opacity = 0;
+  }
+});
+canvas.addEventListener("mouseleave", () => { hovered = null; tooltip.style.opacity = 0; });
+canvas.addEventListener("mousedown", (e) => {
+  const { x, y } = localPos(e);
+  dragging = nodeAt(x, y);
+  if (dragging) canvas.style.cursor = "grabbing";
+});
+window.addEventListener("mouseup", () => { dragging = null; });
+canvas.addEventListener("click", (e) => {
+  const { x, y } = localPos(e);
+  const n = nodeAt(x, y);
+  selected = n || null;
+  renderSide();
+});
+
+function renderSide() {
+  const label = document.getElementById("focus-label");
+  const meta = document.getElementById("focus-meta");
+  const list = document.getElementById("conn-list");
+  if (!selected) {
+    label.textContent = "Tutto il cervello";
+    meta.textContent = `${nodes.length} nodi · ${links.length} connessioni — clicca un nodo`;
+    list.innerHTML = "";
+    return;
+  }
+  const vicini = [...adj[selected.id]].map((id) => byId[id]);
+  label.textContent = selected.label;
+  meta.textContent = `${TYPE_LABEL[selected.type]} · ${vicini.length} connessioni`;
+  list.innerHTML = vicini
+    .map((n) => `<div class="conn"><i style="background:${COLORS[n.type]};box-shadow:0 0 6px ${COLORS[n.type]}"></i>${n.label}</div>`)
+    .join("");
+}
+renderSide();
+
+// orologio
+function tick() {
+  const d = new Date();
+  document.getElementById("clock").textContent = d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+}
+tick(); setInterval(tick, 30000);
+</script>
+</body>
+</html>

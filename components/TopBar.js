@@ -12,10 +12,7 @@ export default function TopBar({ active, onSelect }) {
   return (
     <header id="topbar">
       <div className="brand">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3 3" />
-        </svg>
+        <span className="brand-dot" />
         PersonalOS
       </div>
       <nav id="tabs">
@@ -28,7 +25,7 @@ export default function TopBar({ active, onSelect }) {
             {s.label}
           </button>
         ))}
-        <a href="/api/admin/export" style={{ fontSize: 12.5, color: "var(--text-faint)", padding: "8px 10px" }}>
+        <a href="/api/admin/export">
           Backup
         </a>
       </nav>
