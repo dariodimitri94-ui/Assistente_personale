@@ -5,6 +5,7 @@ import TopBar from "./TopBar";
 import CaptureBar from "./CaptureBar";
 import Home from "./screens/Home";
 import Crm from "./screens/Crm";
+import Clienti from "./screens/Clienti";
 import Finance from "./screens/Finance";
 import Review from "./screens/Review";
 
@@ -34,6 +35,7 @@ export default function Dashboard() {
       <main id="grid-container">
         {active === "home" && <Home />}
         {active === "crm" && <Crm openTaskId={openTaskId} onTaskOpened={() => setOpenTaskId(null)} />}
+        {active === "clienti" && <Clienti />}
         {active === "finance" && <Finance />}
         {active === "review" && <Review />}
       </main>
